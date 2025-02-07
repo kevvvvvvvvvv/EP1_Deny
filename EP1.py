@@ -1,15 +1,29 @@
 import random
-
+import time
+import math
 
 class nodo:
-    def __init__(self,dato,hn,np):
+    def __init__(self,dato,hn):
         self.dato = dato
         self.hijos=[]
         self.hn = hn
-        self.np = np
 
     def agregar_hijo(self, hijo):
         self.hijos.append(hijo)
+
+class nodoA:
+    def __init__(self,dato,hn,gn):
+        self.dato = dato
+        self.hijos=[]
+        self.hn = hn
+        self.gn = gn
+        self.fn = hn+gn
+
+    def agregar_hijo(self, hijo):
+        self.hijos.append(hijo)
+        
+    def __lt__(self, otro):
+        return self.fn < otro.fn
 
 #Generando el posicionamiento aleatorio
 def posiPiezas(pieza):  
@@ -20,39 +34,135 @@ def posiPiezas(pieza):
         numeroC = random.randint(0, 7)
     juego[numeroF][numeroC] = pieza
     return numeroF,numeroC
-    
-    
 
-#Bucar fantasma
+#Función distancia Manhattan
+def distanciaMahattan(pacf,pacc,fanf,fanc):
+    dist = abs(pacf - fanf)+abs(pacc-fanc)
+    return dist
 
-#Función euclidiana
-""" def distanciaEclidiana(): """
-    
+#Función distancia euclidiana
+def distanciaEclidiana():
+    dist = math.sqrt(pow(abs(pacf - fanf),2)+pow(abs(pacc-fanc),2))
+    return dist
+
+
+#Función para buscar el pacman(2)
+def buscarPacman(juego):
+    for i in range(0,7):
+        for j in range(0,8):
+            if juego[i][j] == 2:
+                return i,j
+
 
 #Estado inicial de juego 
-
 juego = [
-    ["X", "X", ".", ".", ".", ".", ".", "."],
-    ["X", ".", ".", ".", ".", "X", ".", "."],    
-    ["X", ".", ".", ".", ".", "X", ".", "."],
-    [".", ".", ".", "X", "X", "X", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    ["X", "X", "X", ".", ".", ".", ".", "."]
+    [1, 1, 0, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0, 1, 0, 0],    
+    [1, 0, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 0, 0, 0, 0, 0]
 ]
 
+pacf,pacc=posiPiezas(2)
+fanf,fanc=posiPiezas(3)
 
-posiPiezas("P")
-posiPiezas("F")
-    
 print("JUEGO INICIAL:")
-for fila in juego:
-    print(" ".join(fila))
+for i in range(0,7):
+    print(juego[i])
 
-
-
+nodo1 = nodo(juego,0)
+    
 #Algoritmo Hill Climbing
+def generacionEspacio(nodo1, pacf, pacc):
+    if (pacf - 1 >= 0 ) and nodo1.dato[pacf - 1][pacc] != 1:
+        hijo = [fila.copy() for fila in nodo1.dato] 
+        hijo[pacf][pacc] = 0
+        hijo[pacf - 1][pacc] = 2
+        nodo2 = nodo(hijo, distanciaMahattan(pacf - 1, pacc, fanf, fanc))
+        nodo1.agregar_hijo(nodo2)
+        
+    if (pacc - 1 >= 0) and nodo1.dato[pacf][pacc - 1] != 1:
+        hijo = [fila.copy() for fila in nodo1.dato] 
+        hijo[pacf][pacc] = 0
+        hijo[pacf][pacc - 1] = 2
+        nodo2 = nodo(hijo, distanciaMahattan(pacf, pacc - 1, fanf, fanc))
+        nodo1.agregar_hijo(nodo2)
+    
+    if (pacf + 1 <= 6) and nodo1.dato[pacf + 1][pacc] != 1:
+        hijo = [fila.copy() for fila in nodo1.dato] 
+        hijo[pacf][pacc] = 0
+        hijo[pacf+1][pacc] = 2
+        nodo2 = nodo(hijo, distanciaMahattan(pacf+1, pacc, fanf, fanc))
+        nodo1.agregar_hijo(nodo2)
+        
+    if (pacc + 1 <= 7) and nodo1.dato[pacf][pacc+1] != 1:
+        hijo = [fila.copy() for fila in nodo1.dato] 
+        hijo[pacf][pacc] = 0
+        hijo[pacf][pacc+1] = 2
+        nodo2 = nodo(hijo, distanciaMahattan(pacf, pacc+1, fanf, fanc))
+        nodo1.agregar_hijo(nodo2)
 
+def hill_climbing(nodo1):
+    agenda = [nodo1]
+    tiempo_inicio = time.time()
 
+    while agenda: 
+        if time.time() - tiempo_inicio > 0.01:
+            print("Tiempo límite excedido. Terminando búsqueda. No se encontró una solución")
+            return None
+        nodo_actual = agenda.pop(0) 
+        fila,columna = buscarPacman(nodo_actual.dato)
+        
+        print("Seleccionado con hn =", nodo_actual.hn)
+        for f in nodo_actual.dato:
+            print(f)
+        print("\n----------------------\n")
+        
+        if (fila == fanf and columna ==fanc):  
+            return nodo_actual
+        
+        generacionEspacio(nodo_actual, int(fila),int(columna))
+        agenda.extend(nodo_actual.hijos)
+        agenda.sort(key=lambda x: x.hn)  
+        if agenda:
+            agenda = [agenda[0]]  
+    return None
+
+# Llamada a la función
+hill_climbing(nodo1)
 
 #Algoritmo A*
+def generacionEspacio(nodo1, pacf, pacc):
+    if (pacf - 1 >= 0 ) and nodo1.dato[pacf - 1][pacc] != 1:
+        hijo = [fila.copy() for fila in nodo1.dato] 
+        hijo[pacf][pacc] = 0
+        hijo[pacf - 1][pacc] = 2
+        nodo2 = nodoA(hijo, distanciaEclidiana(pacf - 1, pacc, fanf, fanc),2)
+        nodo1.agregar_hijo(nodo2)
+        
+    if (pacc - 1 >= 0) and nodo1.dato[pacf][pacc - 1] != 1:
+        hijo = [fila.copy() for fila in nodo1.dato] 
+        hijo[pacf][pacc] = 0
+        hijo[pacf][pacc - 1] = 2
+        nodo2 = nodoA(hijo, distanciaEclidiana(pacf, pacc - 1, fanf, fanc),1)
+        nodo1.agregar_hijo(nodo2)
+    
+    if (pacf + 1 <= 6) and nodo1.dato[pacf + 1][pacc] != 1:
+        hijo = [fila.copy() for fila in nodo1.dato] 
+        hijo[pacf][pacc] = 0
+        hijo[pacf+1][pacc] = 2
+        nodo2 = nodoA(hijo, distanciaEclidiana(pacf+1, pacc, fanf, fanc),2)
+        nodo1.agregar_hijo(nodo2)
+        
+    if (pacc + 1 <= 7) and nodo1.dato[pacf][pacc+1] != 1:
+        hijo = [fila.copy() for fila in nodo1.dato] 
+        hijo[pacf][pacc] = 0
+        hijo[pacf][pacc+1] = 2
+        nodo2 = nodoA(hijo, distanciaEclidiana(pacf, pacc+1, fanf, fanc),1)
+        nodo1.agregar_hijo(nodo2)
+    
+    
+def a_estrella():
+    
