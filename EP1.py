@@ -185,12 +185,17 @@ def a_estrella(nodo1):
     agenda = []  # Cola de prioridad (agenda)
     heapq.heappush(agenda, nodo1)  # Agregar nodo inicial
     explorados = set()  # Conjunto de nodos visitados
+    tiempo_inicio = time.time()
 
     while agenda:
+        if time.time() - tiempo_inicio > 0.01:
+            print("Tiempo límite excedido. Terminando búsqueda. No se encontró una solución")
+            return None
         actual = heapq.heappop(agenda)  # Extraer nodo con menor f(n)
         fila,columna = buscarPacman(actual.dato);
         # Condición de parada: si el primer nodo es la meta y los demás tienen costo mayor o igual
-        if actual.dato[fila][columna] == 3:
+        if fila == fanf and columna == fanc:
+            imprimirJuego(actual.dato)
             return actual  # Se encontró la solución óptima
 
         explorados.add(tuple(map(tuple, actual.dato)))  # Marcar nodo como explorado
