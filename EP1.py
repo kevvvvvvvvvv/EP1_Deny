@@ -1,6 +1,7 @@
 import random
 import time
 import math
+import heapq
 
 class nodo:
     def __init__(self,dato,hn):
@@ -53,6 +54,19 @@ def buscarPacman(juego):
             if juego[i][j] == 2:
                 return i,j
 
+def imprimirJuego(juego):        
+    for f in juego:
+        for d in range(len(f)):
+            if f[d] == 1:
+                print("■",end=" ")
+            if f[d] == 0:
+                print(".",end=" ")
+            if f[d] == 2:
+                print("C",end=" ")
+            if f[d] == 3:
+                print("Ö",end =" ")
+        print()
+    print("\n----------------------\n")
 
 #Estado inicial de juego 
 juego = [
@@ -69,12 +83,16 @@ pacf,pacc=posiPiezas(2)
 fanf,fanc=posiPiezas(3)
 
 print("JUEGO INICIAL:")
-for i in range(0,7):
-    print(juego[i])
+print("■ Obstaculo")
+print(". Espacio libre")
+print("C Pacman")
+print("Ö Fantasma")
+imprimirJuego(juego)
+
 
 nodo1 = nodo(juego,0)
     
-#Algoritmo Hill Climbing
+#Espacio de trabajo para Hill CLimbing
 def generacionEspacio(nodo1, pacf, pacc):
     if (pacf - 1 >= 0 ) and nodo1.dato[pacf - 1][pacc] != 1:
         hijo = [fila.copy() for fila in nodo1.dato] 
@@ -109,16 +127,14 @@ def hill_climbing(nodo1):
     tiempo_inicio = time.time()
 
     while agenda: 
-        if time.time() - tiempo_inicio > 0.01:
+        if time.time() - tiempo_inicio > 0.03:
             print("Tiempo límite excedido. Terminando búsqueda. No se encontró una solución")
             return None
         nodo_actual = agenda.pop(0) 
         fila,columna = buscarPacman(nodo_actual.dato)
         
         print("Seleccionado con hn =", nodo_actual.hn)
-        for f in nodo_actual.dato:
-            print(f)
-        print("\n----------------------\n")
+        imprimirJuego(nodo_actual.dato)
         
         if (fila == fanf and columna ==fanc):  
             return nodo_actual
@@ -164,5 +180,28 @@ def generacionEspacio(nodo1, pacf, pacc):
         nodo1.agregar_hijo(nodo2)
     
     
-def a_estrella():
+def a_estrella(nodo1,fanf,fanc):
+    agenda = []  # Cola de prioridad (agenda)
+    heapq.heappush(agenda, nodo1)  # Agregar nodo inicial
+    explorados = set()  # Conjunto de nodos visitados
+
+    while agenda:
+        actual = heapq.heappop(agenda)  # Extraer nodo con menor f(n)
+
+        # Condición de parada: si el primer nodo es la meta y los demás tienen costo mayor o igual
+        if actual.dato == fin.dato and all(n.fn >= fin.fn for n in agenda):
+            return actual  # Se encontró la solución óptima
+
+        explorados.add(tuple(map(tuple, actual.dato)))  # Marcar nodo como explorado
+
+        # Generamos los sucesores
+        pacf, pacc = buscarPacman(actual.dato)  # Encuentra la posición del 2 en la matriz
+        generacionEspacio(actual, pacf, pacc)
+
+        for hijo in hijos:
+            if tuple(map(tuple, hijo.dato)) not in explorados:
+                heapq.heappush(agenda, hijo)  # Agregar sucesores a la agenda
+
+    return None  # Si no encuentra solución
+        
     
