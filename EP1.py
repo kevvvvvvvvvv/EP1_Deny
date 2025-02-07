@@ -42,7 +42,7 @@ def distanciaMahattan(pacf,pacc,fanf,fanc):
     return dist
 
 #Función distancia euclidiana
-def distanciaEclidiana():
+def distanciaEclidiana(pacf,pacc,fanf,fanc):
     dist = math.sqrt(pow(abs(pacf - fanf),2)+pow(abs(pacc-fanc),2))
     return dist
 
@@ -147,7 +147,8 @@ def hill_climbing(nodo1):
     return None
 
 # Llamada a la función
-hill_climbing(nodo1)
+""" hill_climbing(nodo1) """
+
 
 #Algoritmo A*
 def generacionEspacio(nodo1, pacf, pacc):
@@ -180,16 +181,16 @@ def generacionEspacio(nodo1, pacf, pacc):
         nodo1.agregar_hijo(nodo2)
     
     
-def a_estrella(nodo1,fanf,fanc):
+def a_estrella(nodo1):
     agenda = []  # Cola de prioridad (agenda)
     heapq.heappush(agenda, nodo1)  # Agregar nodo inicial
     explorados = set()  # Conjunto de nodos visitados
 
     while agenda:
         actual = heapq.heappop(agenda)  # Extraer nodo con menor f(n)
-
+        fila,columna = buscarPacman(actual.dato);
         # Condición de parada: si el primer nodo es la meta y los demás tienen costo mayor o igual
-        if actual.dato == fin.dato and all(n.fn >= fin.fn for n in agenda):
+        if actual.dato[fila][columna] == 3:
             return actual  # Se encontró la solución óptima
 
         explorados.add(tuple(map(tuple, actual.dato)))  # Marcar nodo como explorado
@@ -198,10 +199,11 @@ def a_estrella(nodo1,fanf,fanc):
         pacf, pacc = buscarPacman(actual.dato)  # Encuentra la posición del 2 en la matriz
         generacionEspacio(actual, pacf, pacc)
 
-        for hijo in hijos:
+        for hijo in actual.hijos:
             if tuple(map(tuple, hijo.dato)) not in explorados:
                 heapq.heappush(agenda, hijo)  # Agregar sucesores a la agenda
 
+        imprimirJuego(actual.dato)
     return None  # Si no encuentra solución
         
-    
+a_estrella(nodo1)
