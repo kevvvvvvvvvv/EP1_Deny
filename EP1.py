@@ -27,7 +27,7 @@ class nodoA:
         return self.fn < otro.fn
 
 #Generando el posicionamiento aleatorio
-def posiPiezas(pieza):  
+def posiPiezas(juego,pieza):  
     numeroF = random.randint(0, 6)
     numeroC = random.randint(0, 7)
     while(juego[numeroF][numeroC] == 1 or juego[numeroF][numeroC]==2):
@@ -68,32 +68,10 @@ def imprimirJuego(juego):
         print()
     print("\n----------------------\n")
 
-#Estado inicial de juego 
-juego = [
-    [1, 1, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 1, 0, 0],    
-    [1, 0, 0, 0, 0, 1, 0, 0],
-    [0, 0, 0, 1, 1, 1, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 1, 1, 0, 0, 0, 0, 0]
-]
-
-pacf,pacc=posiPiezas(2)
-fanf,fanc=posiPiezas(3)
-
-print("JUEGO INICIAL:")
-print("■ Obstaculo")
-print(". Espacio libre")
-print("C Pacman")
-print("Ö Fantasma")
-imprimirJuego(juego)
-
-
-nodo1 = nodo(juego,0)
     
 #Espacio de trabajo para Hill CLimbing
 def generacionEspacio(nodo1, pacf, pacc):
+    global fanf, fanc
     if (pacf - 1 >= 0 ) and nodo1.dato[pacf - 1][pacc] != 1:
         hijo = [fila.copy() for fila in nodo1.dato] 
         hijo[pacf][pacc] = 0
@@ -123,9 +101,11 @@ def generacionEspacio(nodo1, pacf, pacc):
         nodo1.agregar_hijo(nodo2)
 
 def hill_climbing(nodo1):
+    global fanf, fanc, pacf,pacc
     agenda = [nodo1]
     tiempo_inicio = time.time()
 
+   
     while agenda: 
         if time.time() - tiempo_inicio > 0.03:
             print("Tiempo límite excedido. Terminando búsqueda. No se encontró una solución")
@@ -146,12 +126,9 @@ def hill_climbing(nodo1):
             agenda = [agenda[0]]  
     return None
 
-# Llamada a la función
-""" hill_climbing(nodo1) """
-
-
 #Algoritmo A*
-def generacionEspacio(nodo1, pacf, pacc):
+def generacionEspacioA(nodo1, pacf, pacc):
+    global fanf, fanc
     if (pacf - 1 >= 0 ) and nodo1.dato[pacf - 1][pacc] != 1:
         hijo = [fila.copy() for fila in nodo1.dato] 
         hijo[pacf][pacc] = 0
@@ -182,33 +159,85 @@ def generacionEspacio(nodo1, pacf, pacc):
     
     
 def a_estrella(nodo1):
-    agenda = []  # Cola de prioridad (agenda)
-    heapq.heappush(agenda, nodo1)  # Agregar nodo inicial
-    explorados = set()  # Conjunto de nodos visitados
+    global fanf, fanc, pacf,pacc
+    agenda = []  
+    heapq.heappush(agenda, nodo1) 
+    explorados = set()  
     tiempo_inicio = time.time()
 
     while agenda:
         if time.time() - tiempo_inicio > 0.01:
             print("Tiempo límite excedido. Terminando búsqueda. No se encontró una solución")
             return None
-        actual = heapq.heappop(agenda)  # Extraer nodo con menor f(n)
+        actual = heapq.heappop(agenda)
         fila,columna = buscarPacman(actual.dato);
-        # Condición de parada: si el primer nodo es la meta y los demás tienen costo mayor o igual
+        
         if fila == fanf and columna == fanc:
             imprimirJuego(actual.dato)
-            return actual  # Se encontró la solución óptima
+            return actual
 
-        explorados.add(tuple(map(tuple, actual.dato)))  # Marcar nodo como explorado
-
-        # Generamos los sucesores
-        pacf, pacc = buscarPacman(actual.dato)  # Encuentra la posición del 2 en la matriz
-        generacionEspacio(actual, pacf, pacc)
+        explorados.add(tuple(map(tuple, actual.dato))) 
+        pacf, pacc = buscarPacman(actual.dato) 
+        generacionEspacioA(actual, pacf, pacc)
 
         for hijo in actual.hijos:
             if tuple(map(tuple, hijo.dato)) not in explorados:
-                heapq.heappush(agenda, hijo)  # Agregar sucesores a la agenda
-
+                heapq.heappush(agenda, hijo) 
+        print("Seleccionado con fn =",actual.fn)
         imprimirJuego(actual.dato)
-    return None  # Si no encuentra solución
+    return None 
         
-a_estrella(nodo1)
+        
+fanf = 0
+fanc = 0
+pacf = 0
+pacc = 0
+
+#Menu de opciones
+def menu():
+    global fanf, fanc, pacf,pacc
+    opc = 1
+    while opc != 3:
+        print("--------------------")
+        print("JUEGO")
+        print("--------------------")
+        print("Elige un método de búsqueda:")
+        print("1. Algoritmo Hill Cimbing")
+        print("2. algoritmo A Estrella")
+        print("3. Terminar")
+        opc = int(input())
+        
+        #Estado inicial de juego 
+        juego = [
+            [1, 1, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 1, 0, 0],    
+            [1, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 0, 0, 0, 0, 0]
+        ]
+        
+        
+        pacf,pacc=posiPiezas(juego,2)
+        fanf,fanc=posiPiezas(juego,3)
+        
+
+        print("JUEGO INICIAL:")
+        print("■ Obstaculo")
+        print(". Espacio libre")
+        print("C Pacman")
+        print("Ö Fantasma")
+        imprimirJuego(juego)
+
+        if(opc == 1):
+            nodo1 = nodo(juego,0)
+            hill_climbing(nodo1)
+        elif(opc == 2):
+            nodo1 = nodoA(juego,0,0)
+            a_estrella(nodo1)
+        else:
+            return None
+            
+menu() 
+        
